@@ -1,0 +1,82 @@
+
+# ==============================
+# Python Backend
+# ==============================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python testing and cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==============================
+# Frontend - React / Vite
+# ==============================
+
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ==============================
+# Environment variables / Secrets
+# ==============================
+
+.env
+.env.*
+!.env.example
+
+# ==============================
+# Database and local data
+# ==============================
+
+*.db
+*.sqlite
+*.sqlite3
+
+# ==============================
+# Logs
+# ==============================
+
+*.log
+logs/
+email&pass.txt
+
+# ==============================
+# Operating System
+# ==============================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================
+# IDE / Editor
+# ==============================
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# ==============================
+# Temporary files
+# ==============================
+
+*.tmp
+*.temp
+*.bak
