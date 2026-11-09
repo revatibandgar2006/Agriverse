@@ -1,19 +1,10 @@
 const API_BASE_URL = "http://127.0.0.1:8000";
 const TOKEN_KEY = "agriverse_token";
 
-// --------------------------------------------------
-// COMMON API REQUEST HANDLER
-// --------------------------------------------------
-
 export async function apiRequest(endpoint, options = {}) {
   const token = localStorage.getItem(TOKEN_KEY);
+  const headers = { ...(options.headers || {}) };
 
-  const headers = {
-    ...options.headers,
-  };
-
-  // Set JSON content type only for JSON request bodies.
-  // URLSearchParams must use application/x-www-form-urlencoded.
   if (
     options.body &&
     !(options.body instanceof URLSearchParams) &&
@@ -22,7 +13,6 @@ export async function apiRequest(endpoint, options = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  // Attach JWT token to protected API requests.
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -40,9 +30,7 @@ export async function apiRequest(endpoint, options = {}) {
     );
   }
 
-  if (response.status === 204) {
-    return null;
-  }
+  if (response.status === 204) return null;
 
   const contentType = response.headers.get("content-type") || "";
   let data = null;
@@ -54,8 +42,8 @@ export async function apiRequest(endpoint, options = {}) {
       data = null;
     }
   } else {
-    const text = await response.text();
-    data = text ? { detail: text } : null;
+    const responseText = await response.text();
+    data = responseText ? { detail: responseText } : null;
   }
 
   if (!response.ok) {
@@ -67,7 +55,7 @@ export async function apiRequest(endpoint, options = {}) {
     if (response.status === 401) {
       throw new Error(
         typeof message === "string"
-          ? `${message}. Please log in again if your session has expired.`
+          ? `${message} Please log in again if your session has expired.`
           : JSON.stringify(message)
       );
     }
@@ -80,43 +68,28 @@ export async function apiRequest(endpoint, options = {}) {
   return data;
 }
 
-// --------------------------------------------------
 // AUTHENTICATION
-// --------------------------------------------------
-
 export async function login(email, password) {
   const formData = new URLSearchParams();
-
-  // FastAPI OAuth2PasswordRequestForm expects "username".
-  // In AgriVerse, the username field contains the user's email.
-  formData.set("username", email);
-  formData.set("password", password);
+  formData.append("username", email);
+  formData.append("password", password);
 
   const data = await apiRequest("/login", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
     body: formData,
   });
 
-  if (!data?.access_token) {
-    throw new Error("Login response did not contain an access token.");
+  if (data?.access_token) {
+    localStorage.setItem(TOKEN_KEY, data.access_token);
   }
-
-  localStorage.setItem(TOKEN_KEY, data.access_token);
 
   return data;
 }
 
-export function register(username, email, password) {
+export async function register(userData) {
   return apiRequest("/register", {
     method: "POST",
-    body: JSON.stringify({
-      username,
-      email,
-      password,
-    }),
+    body: JSON.stringify(userData),
   });
 }
 
@@ -128,119 +101,139 @@ export function isLoggedIn() {
   return Boolean(localStorage.getItem(TOKEN_KEY));
 }
 
-// --------------------------------------------------
-// USER PROFILE
-// --------------------------------------------------
-
-export function getMyProfile() {
+// PROFILE
+export async function getMyProfile() {
   return apiRequest("/users/me");
 }
 
-// --------------------------------------------------
-// FARMER CRUD
-// --------------------------------------------------
-
-export function getFarmers() {
+// FARMERS
+export async function getFarmers() {
   return apiRequest("/farmers");
 }
 
-export function getFarmerById(farmerId) {
-  return apiRequest(`/farmers/${farmerId}`);
+export async function getFarmerById(id) {
+  return apiRequest(`/farmers/${id}`);
 }
 
-export function createFarmer(farmerData) {
+export async function createFarmer(farmerData) {
   return apiRequest("/farmers", {
     method: "POST",
     body: JSON.stringify(farmerData),
   });
 }
 
-export function updateFarmer(farmerId, farmerData) {
-  return apiRequest(`/farmers/${farmerId}`, {
+export async function updateFarmer(id, farmerData) {
+  return apiRequest(`/farmers/${id}`, {
     method: "PUT",
     body: JSON.stringify(farmerData),
   });
 }
 
-export function deleteFarmer(farmerId) {
-  return apiRequest(`/farmers/${farmerId}`, {
-    method: "DELETE",
-  });
+export async function deleteFarmer(id) {
+  return apiRequest(`/farmers/${id}`, { method: "DELETE" });
 }
 
-// --------------------------------------------------
-// DASHBOARD ANALYTICS
-// --------------------------------------------------
-
-export function getDashboardAnalytics() {
+// DASHBOARD
+export async function getDashboardAnalytics() {
   return apiRequest("/analytics/dashboard");
 }
 
-// --------------------------------------------------
 // WEATHER
-// --------------------------------------------------
+export async function getWeather(location) {
+  const cleanLocation = String(location || "").trim();
 
-export function getWeather(location) {
-  const trimmedLocation = location?.trim();
-
-  if (!trimmedLocation || trimmedLocation.length < 2) {
-    return Promise.reject(
-      new Error("Please enter a valid village, town, or city name.")
-    );
+  if (!cleanLocation) {
+    throw new Error("Please enter a location.");
   }
 
-  const query = encodeURIComponent(trimmedLocation);
-
-  // apiRequest automatically attaches the saved JWT token.
-  return apiRequest(`/weather?location=${query}`);
+  return apiRequest(`/weather?location=${encodeURIComponent(cleanLocation)}`);
 }
 
-// --------------------------------------------------
 // CROP RECOMMENDATION
-// --------------------------------------------------
-
-export function getCropRecommendation(cropData) {
-  return apiRequest("/crop-recommendation/recommend", {
+export async function getCropRecommendation(cropData) {
+  return apiRequest("/crop-recommendation", {
     method: "POST",
     body: JSON.stringify(cropData),
   });
 }
 
-
-
-
-/* ==========================================
-   FARMING ACTIVITY PLANNER
-   ========================================== */
-
-export function getFarmingActivities(status = "all") {
-  const query = new URLSearchParams({ activity_status: status });
-  return apiRequest(`/farming-activities?${query.toString()}`);
+// FARMING ACTIVITIES
+export async function getFarmingActivities(status = "all") {
+  return apiRequest(
+    `/farming-activities?status=${encodeURIComponent(status)}`
+  );
 }
 
-export function createFarmingActivity(activityData) {
+export async function createFarmingActivity(activityData) {
   return apiRequest("/farming-activities", {
     method: "POST",
     body: JSON.stringify(activityData),
   });
 }
 
-export function updateFarmingActivity(activityId, activityData) {
-  return apiRequest(`/farming-activities/${activityId}`, {
+export async function updateFarmingActivity(id, activityData) {
+  return apiRequest(`/farming-activities/${id}`, {
     method: "PUT",
     body: JSON.stringify(activityData),
   });
 }
 
-export function updateFarmingActivityStatus(activityId, completed) {
-  return apiRequest(`/farming-activities/${activityId}/status`, {
+export async function updateFarmingActivityStatus(id, completed) {
+  return apiRequest(`/farming-activities/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ completed }),
   });
 }
 
-export function deleteFarmingActivity(activityId) {
-  return apiRequest(`/farming-activities/${activityId}`, {
-    method: "DELETE",
+export async function deleteFarmingActivity(id) {
+  return apiRequest(`/farming-activities/${id}`, { method: "DELETE" });
+}
+
+// FARM FINANCE
+export async function getFarmFinanceSummary() {
+  return apiRequest("/farm-finance/summary");
+}
+
+export async function getFarmExpenses() {
+  return apiRequest("/farm-finance/expenses");
+}
+
+export async function createFarmExpense(expenseData) {
+  return apiRequest("/farm-finance/expenses", {
+    method: "POST",
+    body: JSON.stringify(expenseData),
   });
+}
+
+export async function updateFarmExpense(id, expenseData) {
+  return apiRequest(`/farm-finance/expenses/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(expenseData),
+  });
+}
+
+export async function deleteFarmExpense(id) {
+  return apiRequest(`/farm-finance/expenses/${id}`, { method: "DELETE" });
+}
+
+export async function getFarmIncome() {
+  return apiRequest("/farm-finance/income");
+}
+
+export async function createFarmIncome(incomeData) {
+  return apiRequest("/farm-finance/income", {
+    method: "POST",
+    body: JSON.stringify(incomeData),
+  });
+}
+
+export async function updateFarmIncome(id, incomeData) {
+  return apiRequest(`/farm-finance/income/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(incomeData),
+  });
+}
+
+export async function deleteFarmIncome(id) {
+  return apiRequest(`/farm-finance/income/${id}`, { method: "DELETE" });
 }

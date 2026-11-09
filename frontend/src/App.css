@@ -2122,3 +2122,37 @@ textarea {
     width: 100%;
   }
 }
+
+/* Fix main application layout width */
+.app-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.sidebar {
+  flex: 0 0 260px;
+  width: 260px;
+  min-width: 260px;
+}
+
+.main-content {
+  flex: 1;
+  width: calc(100% - 260px);
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.topbar {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.page-content {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}

@@ -18,7 +18,7 @@ from weather import router as weather_router
 from crop_recommendation import router as crop_recommendation_router
 
 from database import get_db, engine
-from farming_activities import router as farming_activities_router
+from farming_activities import router as farming_activities_router\nfrom farmerfinance import router as farm_finance_router
 
 
 # --------------------------------------------------
@@ -42,7 +42,7 @@ app.add_middleware(
 
 app.include_router(weather_router)
 app.include_router(crop_recommendation_router)
-app.include_router(farming_activities_router)
+app.include_router(farming_activities_router)\napp.include_router(farm_finance_router)
 
 
 

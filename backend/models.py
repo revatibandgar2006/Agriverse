@@ -96,3 +96,110 @@ class FarmingActivity(Base):
         "User",
         back_populates="farming_activities",
     )
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    Date,
+    Text,
+    Boolean,
+    DateTime,
+    Numeric,
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+
+    farmers = relationship(
+        "Farmer",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
+    farming_activities = relationship(
+        "FarmingActivity",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
+    farm_expenses = relationship(
+        "FarmExpense",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
+    farm_incomes = relationship(
+        "FarmIncome",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
+
+
+class Farmer(Base):
+    __tablename__ = "farmers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    phone = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    farm_size = Column(String, nullable=False)
+    crop = Column(String, nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    owner = relationship("User", back_populates="farmers")
+
+
+class FarmingActivity(Base):
+    __tablename__ = "farming_activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(150), nullable=False)
+    activity_type = Column(String(50), nullable=False)
+    scheduled_date = Column(Date, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+    completed = Column(Boolean, nullable=False, default=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    owner = relationship("User", back_populates="farming_activities")
+
+
+class FarmExpense(Base):
+    __tablename__ = "farm_expenses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    crop_name = Column(String(100), nullable=False, index=True)
+    category = Column(String(100), nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
+    expense_date = Column(Date, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    owner = relationship("User", back_populates="farm_expenses")
+
+
+class FarmIncome(Base):
+    __tablename__ = "farm_incomes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    crop_name = Column(String(100), nullable=False, index=True)
+    quantity = Column(Numeric(12, 2), nullable=False)
+    unit = Column(String(30), nullable=False)
+    selling_price = Column(Numeric(12, 2), nullable=False)
+    total_amount = Column(Numeric(14, 2), nullable=False)
+    sale_date = Column(Date, nullable=False, index=True)
+    buyer_name = Column(String(150), nullable=True)
+    description = Column(Text, nullable=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    owner = relationship("User", back_populates="farm_incomes")
